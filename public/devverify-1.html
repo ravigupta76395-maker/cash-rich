@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Device Verification Panel</title>
+<style>
+  :root{
+    --accent:#7c6fff; --green:#22c55e; --red:#ef4444; --gold:#f59e0b; --bg:#0b0a14; --bg2:#12111f;
+    --card:#171526; --border:rgba(255,255,255,.08); --text:#f2f1f7; --muted:#8e8aa3;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(circle at 50% -10%, var(--bg2), var(--bg) 70%); color:var(--text); min-height:100vh;
+  }
+  .topbar{padding:16px 22px; background:linear-gradient(90deg,#1e1b4b,#4f46e5); font-weight:800; font-size:16px; color:#fff;}
+  .wrap{max-width:480px; margin:0 auto; padding:24px;}
+  .login-box{max-width:340px; margin:80px auto; background:var(--card); padding:26px; border-radius:16px; border:1px solid var(--border);}
+  .login-box h3{margin-top:0;}
+  .card{background:var(--card); border-radius:16px; padding:22px; border:1px solid var(--border); margin-bottom:18px;}
+  .card h4{margin:0 0 14px; font-size:14px; text-transform:uppercase; letter-spacing:.6px; color:var(--accent);}
+  label{font-size:11.5px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); display:block; margin-top:14px; font-weight:700;}
+  input, select{width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--border); background:#1e1c30; color:var(--text); font-size:14.5px; margin-top:6px;}
+  button{cursor:pointer; border:none; border-radius:10px; padding:12px 16px; font-weight:700; font-size:14px;}
+  .btn-primary{background:var(--accent); color:#fff; width:100%; margin-top:18px;}
+  .msg{font-size:12.5px; margin-top:10px;}
+  .msg.ok{color:var(--green);} .msg.err{color:var(--red);}
+  .example-box{background:#1e1c30; border-radius:12px; padding:14px; font-size:12.5px; color:var(--muted); line-height:1.6; margin-top:16px;}
+  .example-box b{color:var(--text);}
+</style>
+</head>
+<body>
+
+<div class="topbar">🔐 Device Verification Panel</div>
+
+<div id="loginScreen" class="login-box">
+  <h3>Panel Login</h3>
+  <label>Password</label>
+  <input type="password" id="pwInput" placeholder="Enter panel password" />
+  <button class="btn-primary" onclick="login()">Login</button>
+  <div class="msg err" id="loginMsg"></div>
+</div>
+
+<div id="panel" class="wrap" style="display:none;">
+
+  <div class="card">
+    <h4>🎲 Random Fail Rate</h4>
+    <label>Device Verification Fail % (0–100)</label>
+    <input type="number" id="failPercent" min="0" max="100" placeholder="e.g. 30" />
+
+    <label>On Failure, Do This</label>
+    <select id="failAction">
+      <option value="ban">⛔ Ban from Bot</option>
+      <option value="no_refer_bonus">🚫 Only Refer Bonus Not Received (app still opens)</option>
+    </select>
+
+    <button class="btn-primary" onclick="saveSettings()">Save</button>
+    <div class="msg" id="saveMsg"></div>
+
+    <div class="example-box">
+      Example: agar <b>30%</b> set hai, to har 10 verifying users me se lagbhag <b>3</b> is random check me "fail" honge —
+      chahe unka device genuinely theek ho. Ye sirf ek admin-controlled probability hai, real fraud detection ke upar ek extra layer hai.<br/><br/>
+      <b>Ban</b> mode: fail hone pe user bot se poori tarah block ho jayega.<br/>
+      <b>Only Refer Bonus Not Received</b> mode: user Mini App normally use kar payega, lekin agar kisi ne use refer kiya tha, us referrer ko bonus <b>nahi</b> milega is particular referral ke liye.
+    </div>
+  </div>
+
+</div>
+
+<script>
+let panelPassword = "";
+
+function login() {
+  panelPassword = document.getElementById("pwInput").value;
+  fetch("/api/devverify/settings", { headers: { "x-admin-password": panelPassword } })
+    .then(r => { if (!r.ok) throw new Error("Wrong password"); return r.json(); })
+    .then(data => {
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("panel").style.display = "block";
+      document.getElementById("failPercent").value = data.deviceVerificationFailPercent || 0;
+      document.getElementById("failAction").value = data.deviceVerificationFailAction || "no_refer_bonus";
+    })
+    .catch(() => { document.getElementById("loginMsg").textContent = "❌ Incorrect password"; });
+}
+
+async function saveSettings() {
+  const failPercent = document.getElementById("failPercent").value;
+  const failAction = document.getElementById("failAction").value;
+  const msgEl = document.getElementById("saveMsg");
+
+  const res = await fetch("/api/devverify/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-admin-password": panelPassword },
+    body: JSON.stringify({ failPercent, failAction }),
+  });
+
+  if (res.ok) {
+    msgEl.textContent = "✅ Saved"; msgEl.className = "msg ok";
+  } else {
+    msgEl.textContent = "❌ Failed"; msgEl.className = "msg err";
+  }
+}
+</script>
+</body>
+</html>
