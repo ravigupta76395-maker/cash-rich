@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Claim Bonus - Cash Rich</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#050510; --bg2:#0d0a1f;
+    --purple:#7c3aed; --purple2:#a855f7;
+    --green:#16a34a; --green2:#22c55e;
+    --yellow:#eab308; --red:#dc2626;
+    --card:#100c22; --card2:#150f2c;
+    --border:rgba(168,85,247,.18);
+    --text:#f3f1fa; --muted:#8b86a8;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(124,58,237,.25), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(22,163,74,.18), transparent 50%),
+      var(--bg);
+    color:var(--text); min-height:100vh; display:flex; flex-direction:column;
+  }
+
+  .wrap{ max-width:480px; margin:0 auto; width:100%; padding:22px 18px 34px; flex:1; display:flex; flex-direction:column; }
+
+  .hero{ text-align:center; margin-bottom:22px; }
+  .hero .badge{
+    display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px;
+    background:linear-gradient(135deg, var(--purple), #4c1d95); font-size:12px; font-weight:700;
+    letter-spacing:.3px; color:#e9d5ff; margin-bottom:14px;
+  }
+  .hero h1{ font-size:26px; font-weight:800; margin:0 0 6px; letter-spacing:-.3px; }
+  .hero p{ font-size:14px; color:var(--muted); margin:0; line-height:1.5; }
+
+  .warning{
+    display:flex; gap:10px; align-items:flex-start; background:rgba(220,38,38,.1);
+    border:1px solid rgba(220,38,38,.35); border-radius:14px; padding:13px 14px; margin-bottom:20px;
+  }
+  .warning .dot{ width:8px; height:8px; border-radius:50%; background:var(--red); margin-top:5px; flex-shrink:0; }
+  .warning p{ margin:0; font-size:12.5px; line-height:1.55; color:#fecaca; }
+  .warning strong{ color:#fff; }
+
+  form{ display:flex; flex-direction:column; gap:14px; }
+
+  .field{ display:flex; flex-direction:column; gap:7px; }
+  .field label{ font-size:12.5px; font-weight:700; color:var(--muted); letter-spacing:.2px; }
+  .field input{
+    width:100%; padding:14px 15px; border-radius:13px; border:1px solid var(--border);
+    background:var(--card); color:var(--text); font-size:15px; outline:none;
+    transition:border-color .15s, background .15s;
+  }
+  .field input::placeholder{ color:#5c5678; }
+  .field input:focus{ border-color:var(--purple2); background:var(--card2); }
+  .field input.error{ border-color:var(--red); }
+  .field .hint{ font-size:11px; color:var(--red); min-height:14px; }
+
+  .submit-btn{
+    margin-top:8px; width:100%; padding:16px; border:none; border-radius:14px;
+    background:linear-gradient(135deg, var(--green2), var(--green));
+    color:#fff; font-size:16px; font-weight:800; letter-spacing:.2px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    box-shadow:0 10px 24px -8px rgba(34,197,94,.55);
+    transition:transform .12s, box-shadow .12s, opacity .15s;
+  }
+  .submit-btn:active{ transform:scale(.98); }
+  .submit-btn:disabled{ opacity:.55; cursor:not-allowed; box-shadow:none; }
+  .submit-btn svg{ width:18px; height:18px; flex-shrink:0; }
+
+  .status-line{ text-align:center; font-size:13px; color:var(--muted); margin-top:14px; min-height:16px; }
+  .status-line.err{ color:#fca5a5; }
+
+  .footer{ text-align:center; font-size:11px; color:#48435f; margin-top:auto; padding-top:26px; }
+  .footer a{ color:#8b7fd6; text-decoration:none; }
+
+  /* Success overlay */
+  .success-screen{
+    position:fixed; inset:0; background:var(--bg); display:none; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; padding:30px; z-index:50;
+  }
+  .success-screen.show{ display:flex; }
+  .success-ring{
+    width:88px; height:88px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg, var(--green2), var(--green));
+    box-shadow:0 0 0 10px rgba(34,197,94,.12), 0 16px 34px -10px rgba(34,197,94,.55);
+    margin-bottom:22px; animation:pop .45s cubic-bezier(.2,1.4,.4,1);
+  }
+  @keyframes pop{ from{ transform:scale(.4); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  .success-ring svg{ width:40px; height:40px; }
+  .success-screen h2{ font-size:22px; font-weight:800; margin:0 0 8px; }
+  .success-screen .amt{ font-size:36px; font-weight:900; background:linear-gradient(135deg,var(--purple2),var(--green2)); -webkit-background-clip:text; background-clip:text; color:transparent; margin:4px 0 14px; }
+  .success-screen p{ font-size:13.5px; color:var(--muted); margin:0 0 26px; max-width:280px; line-height:1.5; }
+  .open-app-btn{
+    padding:15px 34px; border-radius:14px; border:none; font-weight:800; font-size:15px;
+    background:linear-gradient(135deg, var(--purple2), var(--purple)); color:#fff; cursor:pointer;
+    box-shadow:0 10px 24px -8px rgba(124,58,237,.6);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="badge">Verified Account</span>
+    <h1>Claim Your Bonus</h1>
+    <p>Fill in your details to unlock your welcome bonus and start earning.</p>
+  </div>
+
+  <div class="warning">
+    <span class="dot"></span>
+    <p><strong>Important:</strong> Enter accurate details only. If you submit fake or incorrect information, you will not receive any bonus at all, now or in the future.</p>
+  </div>
+
+  <form id="claimForm" novalidate>
+    <div class="field">
+      <label for="fName">Full Name</label>
+      <input id="fName" type="text" placeholder="Enter your full name" autocomplete="off" />
+      <div class="hint" id="hName"></div>
+    </div>
+
+    <div class="field">
+      <label for="fUsername">Telegram Username</label>
+      <input id="fUsername" type="text" placeholder="username (without @)" autocomplete="off" />
+      <div class="hint" id="hUsername"></div>
+    </div>
+
+    <div class="field">
+      <label for="fNumber">Mobile Number</label>
+      <input id="fNumber" type="tel" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric" autocomplete="off" />
+      <div class="hint" id="hNumber"></div>
+    </div>
+
+    <div class="field">
+      <label for="fUpi">UPI ID</label>
+      <input id="fUpi" type="text" placeholder="yourname@bank" autocomplete="off" />
+      <div class="hint" id="hUpi"></div>
+    </div>
+
+    <div class="field">
+      <label for="fEmail">Email Address</label>
+      <input id="fEmail" type="email" placeholder="you@example.com" autocomplete="off" />
+      <div class="hint" id="hEmail"></div>
+    </div>
+
+    <button type="submit" class="submit-btn" id="submitBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/><path d="M22 4 12 14l-4-4"/></svg>
+      Claim Bonus
+    </button>
+    <div class="status-line" id="statusLine"></div>
+  </form>
+
+  <div class="footer">Powered by <a href="https://t.me/ravimakerprobot" target="_blank">RAVI MAKER PRO</a></div>
+</div>
+
+<div class="success-screen" id="successScreen">
+  <div class="success-ring">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+  </div>
+  <h2>Bonus Claimed</h2>
+  <div class="amt" id="successAmt">+₹0</div>
+  <p>Your bonus has been added to your balance. Open the app to start earning and referring friends.</p>
+  <button class="open-app-btn" id="openAppBtn">Open Mini App</button>
+</div>
+
+<script>
+  const tg = window.Telegram?.WebApp;
+  tg?.ready(); tg?.expand();
+
+  const params = new URLSearchParams(location.search);
+  const uid = params.get("uid") || tg?.initDataUnsafe?.user?.id || "";
+  const tgUser = tg?.initDataUnsafe?.user;
+
+  const form = document.getElementById("claimForm");
+  const submitBtn = document.getElementById("submitBtn");
+  const statusLine = document.getElementById("statusLine");
+
+  const fName = document.getElementById("fName");
+  const fUsername = document.getElementById("fUsername");
+  const fNumber = document.getElementById("fNumber");
+  const fUpi = document.getElementById("fUpi");
+  const fEmail = document.getElementById("fEmail");
+
+  if (tgUser?.username) fUsername.value = tgUser.username;
+  if (tgUser?.first_name) fName.value = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(" ");
+
+  fNumber.addEventListener("input", () => { fNumber.value = fNumber.value.replace(/\D/g, "").slice(0, 10); });
+
+  function setError(input, hintId, message) {
+    input.classList.toggle("error", !!message);
+    document.getElementById(hintId).textContent = message || "";
+  }
+
+  function validate() {
+    let ok = true;
+
+    if (!fName.value.trim()) { setError(fName, "hName", "Name is required"); ok = false; }
+    else setError(fName, "hName", "");
+
+    if (!fUsername.value.trim()) { setError(fUsername, "hUsername", "Username is required"); ok = false; }
+    else setError(fUsername, "hUsername", "");
+
+    if (!/^\d{10}$/.test(fNumber.value.trim())) { setError(fNumber, "hNumber", "Enter a valid 10-digit number"); ok = false; }
+    else setError(fNumber, "hNumber", "");
+
+    if (!/^[\w.\-]+@[\w.\-]+$/.test(fUpi.value.trim())) { setError(fUpi, "hUpi", "Enter a valid UPI ID"); ok = false; }
+    else setError(fUpi, "hUpi", "");
+
+    if (!/^\S+@\S+\.\S+$/.test(fEmail.value.trim())) { setError(fEmail, "hEmail", "Enter a valid email address"); ok = false; }
+    else setError(fEmail, "hEmail", "");
+
+    return ok;
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    statusLine.textContent = "";
+    statusLine.classList.remove("err");
+    if (!validate()) return;
+    if (!uid) { statusLine.textContent = "Missing user ID — reopen from the bot."; statusLine.classList.add("err"); return; }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+
+    try {
+      const res = await fetch("/api/claim-bonus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          telegramId: String(uid),
+          name: fName.value.trim(),
+          username: fUsername.value.trim(),
+          realNumber: fNumber.value.trim(),
+          upiId: fUpi.value.trim(),
+          email: fEmail.value.trim(),
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        statusLine.textContent = data.error || "Something went wrong. Try again.";
+        statusLine.classList.add("err");
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/><path d="M22 4 12 14l-4-4"/></svg>Claim Bonus`;
+        return;
+      }
+
+      document.getElementById("successAmt").textContent = `+₹${data.amount}`;
+      document.getElementById("successScreen").classList.add("show");
+    } catch (err) {
+      statusLine.textContent = "Network error — try again.";
+      statusLine.classList.add("err");
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/><path d="M22 4 12 14l-4-4"/></svg>Claim Bonus`;
+    }
+  });
+
+  document.getElementById("openAppBtn").addEventListener("click", () => {
+    tg?.close();
+  });
+</script>
+</body>
+</html>
