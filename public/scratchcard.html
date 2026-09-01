@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Scratch Card - Cash Rich</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#ffffff; --bg2:#fff8ea;
+    --gold:#f59e0b; --gold2:#fbbf24;
+    --purple:#7c3aed; --purple2:#a855f7;
+    --green:#16a34a; --green2:#22c55e;
+    --red:#ef4444;
+    --card:#ffffff; --card2:#fffaf0;
+    --border:rgba(15,23,42,.08);
+    --text:#181322; --muted:#78748c;
+    --shadow:0 10px 28px -12px rgba(15,23,42,.14);
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(245,158,11,.14), transparent 42%),
+      radial-gradient(circle at 88% 100%, rgba(124,58,237,.12), transparent 48%),
+      var(--bg);
+    color:var(--text); min-height:100vh; display:flex; flex-direction:column;
+    animation:bodyFade .5s var(--ease) both;
+  }
+  @keyframes bodyFade{ from{opacity:0} to{opacity:1} }
+  .hidden{ display:none !important; }
+  button{ transition:transform .16s var(--ease), box-shadow .16s var(--ease), opacity .16s var(--ease); }
+  button:active{ transform:scale(.96); }
+
+  .wrap{ max-width:420px; margin:0 auto; width:100%; padding:26px 20px 34px; flex:1; display:flex; flex-direction:column; }
+
+  .hero{ text-align:center; margin-bottom:22px; animation:fadeDown .5s var(--ease) both; }
+  @keyframes fadeDown{ from{opacity:0; transform:translateY(-10px)} to{opacity:1; transform:translateY(0)} }
+  .hero .badge{
+    display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:999px;
+    background:linear-gradient(135deg,var(--gold2),var(--gold)); font-size:12px; font-weight:700;
+    color:#fff; margin-bottom:12px; box-shadow:0 8px 18px -6px rgba(245,158,11,.5);
+  }
+  .hero h1{ font-size:24px; font-weight:800; margin:0 0 6px; letter-spacing:-.3px; }
+  .hero p{ font-size:13.5px; color:var(--muted); margin:0; }
+
+  /* ---------- Scratch card ---------- */
+  .card-stage{ display:flex; flex-direction:column; align-items:center; animation:fadeUp .5s var(--ease) both; animation-delay:.1s; }
+  @keyframes fadeUp{ from{opacity:0; transform:translateY(12px)} to{opacity:1; transform:translateY(0)} }
+
+  .scratch-outer{
+    position:relative; width:100%; max-width:320px; aspect-ratio:1.55/1; border-radius:22px; overflow:hidden;
+    box-shadow:var(--shadow); border:1px solid var(--border);
+    background:linear-gradient(155deg,#fffaf0,#fff2d6);
+  }
+  .reward-layer{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; gap:6px; padding:10px;
+  }
+  .reward-layer .label{ font-size:12px; font-weight:800; color:var(--muted); letter-spacing:.5px; }
+  .reward-layer .amt{
+    font-size:42px; font-weight:900;
+    background:linear-gradient(135deg,var(--gold),var(--green)); -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .reward-layer .sub{ font-size:11.5px; color:var(--muted); }
+
+  #scratchCanvas{
+    position:absolute; inset:0; width:100%; height:100%; touch-action:none; cursor:pointer;
+    border-radius:22px;
+  }
+
+  .scratch-hint{
+    margin-top:14px; font-size:12.5px; color:var(--muted); text-align:center;
+    animation:pulseHint 1.8s ease-in-out infinite;
+  }
+  @keyframes pulseHint{ 0%,100%{opacity:.55} 50%{opacity:1} }
+  .scratch-hint.hidden-hint{ opacity:0; animation:none; }
+
+  .cards-left{
+    margin-top:18px; font-size:12.5px; color:var(--muted); background:var(--bg2); border:1px solid var(--border);
+    padding:8px 16px; border-radius:999px;
+  }
+
+  .action-btn{
+    margin-top:22px; width:100%; max-width:320px; padding:16px; border:none; border-radius:14px;
+    background:linear-gradient(135deg,var(--purple2),var(--purple)); color:#fff; font-size:15.5px; font-weight:800;
+    cursor:pointer; box-shadow:0 12px 26px -10px rgba(124,58,237,.55);
+    opacity:0; pointer-events:none; transform:translateY(8px);
+    transition:opacity .35s var(--ease), transform .35s var(--ease);
+  }
+  .action-btn.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
+
+  /* ---------- Empty state ---------- */
+  .empty-state{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; text-align:center;
+    gap:14px; animation:fadeUp .5s var(--ease) both;
+  }
+  .empty-icon{
+    width:74px; height:74px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,var(--gold2),var(--gold)); box-shadow:0 12px 28px -8px rgba(245,158,11,.5);
+  }
+  .empty-icon svg{ width:34px; height:34px; }
+  .empty-state h2{ font-size:18px; font-weight:800; margin:0; }
+  .empty-state p{ font-size:13px; color:var(--muted); margin:0; max-width:260px; }
+  .empty-state .back-btn{
+    margin-top:8px; padding:13px 28px; border-radius:13px; border:none; font-weight:800; font-size:14px; cursor:pointer;
+    background:linear-gradient(135deg,var(--green2),var(--green)); color:#fff; box-shadow:0 10px 22px -8px rgba(34,197,94,.5);
+  }
+
+  .toast{
+    position:fixed; left:50%; bottom:30px; transform:translateX(-50%) translateY(20px); z-index:60;
+    background:#181322; border:1px solid var(--border); color:#fff; font-size:13px; font-weight:600;
+    padding:12px 18px; border-radius:13px; opacity:0; pointer-events:none; transition:opacity .25s var(--ease), transform .25s var(--ease);
+    max-width:88%; text-align:center; box-shadow:0 12px 28px -10px rgba(15,23,42,.4);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .footer{ text-align:center; font-size:11px; color:#c9c4dc; margin-top:auto; padding-top:24px; }
+  .footer a{ color:var(--purple2); text-decoration:none; }
+</style>
+</head>
+<body>
+
+<div class="wrap" id="mainStage">
+  <div class="hero">
+    <span class="badge">Scratch & Win</span>
+    <h1>Scratch Card</h1>
+    <p>Scratch the card below to reveal your reward</p>
+  </div>
+
+  <div class="card-stage" id="cardStage">
+    <div class="scratch-outer">
+      <div class="reward-layer" id="rewardLayer">
+        <div class="label">YOU WON</div>
+        <div class="amt" id="rewardAmt">₹--</div>
+        <div class="sub">Added to your balance</div>
+      </div>
+      <canvas id="scratchCanvas"></canvas>
+    </div>
+    <div class="scratch-hint" id="scratchHint">Rub your finger across the card to scratch it off</div>
+    <div class="cards-left" id="cardsLeftNote">1 card remaining</div>
+    <button class="action-btn" id="actionBtn">Awesome, Continue</button>
+  </div>
+</div>
+
+<div class="empty-state hidden" id="emptyState">
+  <div class="empty-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 7l2.5-4h13L21 7"/><path d="M12 12v4"/><path d="M10 14h4"/></svg>
+  </div>
+  <h2>No Scratch Cards Yet</h2>
+  <p>Keep referring friends — you'll earn a scratch card every few referrals.</p>
+  <button class="back-btn" id="emptyBackBtn">Back to Dashboard</button>
+</div>
+
+<div class="footer">Powered by <a href="https://t.me/ravimakerprobot" target="_blank">RAVI MAKER PRO</a></div>
+<div class="toast" id="toast"></div>
+
+<script>
+  const tg = window.Telegram?.WebApp;
+  tg?.ready(); tg?.expand();
+
+  const params = new URLSearchParams(location.search);
+  const uid = params.get("uid") || tg?.initDataUnsafe?.user?.id || "";
+
+  let cardsLeft = 0;
+  let claiming = false;
+  let claimed = false;
+
+  function toast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
+  function goBack() {
+    if (tg?.close) tg.close();
+    else location.href = `index.html?uid=${uid}`;
+  }
+  document.getElementById("emptyBackBtn").addEventListener("click", goBack);
+  document.getElementById("actionBtn").addEventListener("click", () => {
+    cardsLeft > 0 ? setupCard() : goBack();
+  });
+
+  async function init() {
+    if (!uid) { toast("Missing user ID — reopen from the bot"); return; }
+    try {
+      const res = await fetch(`/api/user/${uid}`);
+      const data = await res.json();
+      if (!res.ok) { toast(data.error || "Failed to load"); return; }
+      cardsLeft = data.pendingScratchCards || 0;
+
+      if (cardsLeft <= 0) {
+        document.getElementById("mainStage").classList.add("hidden");
+        document.getElementById("emptyState").classList.remove("hidden");
+        return;
+      }
+      updateCardsLeftNote();
+      setupCard();
+    } catch (err) {
+      toast("Network error");
+    }
+  }
+
+  function updateCardsLeftNote() {
+    document.getElementById("cardsLeftNote").textContent =
+      cardsLeft === 1 ? "1 card remaining" : `${cardsLeft} cards remaining`;
+  }
+
+  // ---------- Scratch canvas logic ----------
+  let canvas, ctx, isDrawing = false, scratchedChecked = false;
+
+  function setupCard() {
+    claimed = false;
+    document.getElementById("actionBtn").classList.remove("show");
+    document.getElementById("scratchHint").classList.remove("hidden-hint");
+    document.getElementById("rewardAmt").textContent = "₹--";
+
+    canvas = document.getElementById("scratchCanvas");
+    const outer = canvas.parentElement;
+    const rect = outer.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+    ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    canvas.style.opacity = "1";
+    canvas.style.transition = "opacity .5s cubic-bezier(.22,1,.36,1)";
+
+    // Gold foil texture
+    const grad = ctx.createLinearGradient(0, 0, rect.width, rect.height);
+    grad.addColorStop(0, "#fde68a");
+    grad.addColorStop(0.5, "#f59e0b");
+    grad.addColorStop(1, "#d97706");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    ctx.fillStyle = "rgba(255,255,255,.9)";
+    ctx.font = "700 15px -apple-system, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("SCRATCH HERE", rect.width / 2, rect.height / 2 - 10);
+    ctx.font = "400 22px -apple-system, sans-serif";
+    ctx.fillText("🎟️", rect.width / 2, rect.height / 2 + 20);
+
+    scratchedChecked = false;
+    canvas.onpointerdown = startDraw;
+    canvas.onpointermove = draw;
+    canvas.onpointerup = stopDraw;
+    canvas.onpointerleave = stopDraw;
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  function startDraw(e) {
+    isDrawing = true;
+    canvas.setPointerCapture(e.pointerId);
+    scratchAt(getPos(e));
+  }
+  function draw(e) {
+    if (!isDrawing) return;
+    scratchAt(getPos(e));
+    checkScratchedPercent();
+  }
+  function stopDraw() {
+    isDrawing = false;
+    checkScratchedPercent();
+  }
+
+  function scratchAt(pos) {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 22, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function checkScratchedPercent() {
+    if (claimed) return;
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let transparent = 0;
+    const step = 4 * 8; // sample every 8th pixel for speed
+    let total = 0;
+    for (let i = 3; i < imgData.length; i += step) {
+      total++;
+      if (imgData[i] < 40) transparent++;
+    }
+    const percent = (transparent / total) * 100;
+    if (percent > 45 && !scratchedChecked) {
+      scratchedChecked = true;
+      revealReward(rect);
+    }
+  }
+
+  async function revealReward(rect) {
+    if (claiming || claimed) return;
+    claiming = true;
+    document.getElementById("scratchHint").classList.add("hidden-hint");
+
+    try {
+      const res = await fetch("/api/scratchcard/claim", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ telegramId: uid }),
+      });
+      const data = await res.json();
+      claiming = false;
+
+      if (!res.ok) {
+        toast(data.error || "Could not open scratch card");
+        canvas.style.opacity = "1";
+        return;
+      }
+
+      claimed = true;
+      cardsLeft = data.cardsLeft;
+      document.getElementById("rewardAmt").textContent = `+₹${data.reward}`;
+
+      // Fade the remaining foil away smoothly
+      canvas.onpointerdown = canvas.onpointermove = canvas.onpointerup = null;
+      canvas.style.opacity = "0";
+
+      updateCardsLeftNote();
+      const btn = document.getElementById("actionBtn");
+      btn.textContent = cardsLeft > 0 ? "Open Next Card" : "Awesome, Continue";
+      btn.classList.add("show");
+    } catch (err) {
+      claiming = false;
+      toast("Network error — try again");
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
