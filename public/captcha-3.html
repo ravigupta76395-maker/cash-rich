@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Captcha - Cash Rich</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#ffffff; --bg2:#fff8ea;
+    --gold:#f59e0b; --gold2:#fbbf24;
+    --purple:#7c3aed; --purple2:#a855f7;
+    --green:#16a34a; --green2:#22c55e;
+    --red:#ef4444;
+    --card:#ffffff; --card2:#fffaf0;
+    --border:rgba(15,23,42,.08); --text:#181322; --muted:#78748c;
+    --shadow:0 18px 44px -18px rgba(15,23,42,.18);
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:
+      radial-gradient(circle at 12% -6%, rgba(245,158,11,.16), transparent 42%),
+      radial-gradient(circle at 90% 105%, rgba(124,58,237,.14), transparent 48%),
+      var(--bg);
+    color:var(--text); min-height:100vh; position:relative; overflow-x:hidden;
+    display:flex; flex-direction:column;
+    animation:bodyFade .5s var(--ease) both;
+  }
+  @keyframes bodyFade{ from{opacity:0} to{opacity:1} }
+  button{ transition:transform .16s var(--ease), box-shadow .16s var(--ease); }
+
+  .topbar{
+    position:relative; z-index:2; display:flex; align-items:center; justify-content:space-between;
+    padding:16px 18px; border-bottom:1px solid var(--border);
+    animation:fadeDown .5s var(--ease) both;
+  }
+  @keyframes fadeDown{ from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:translateY(0)} }
+  .topbar-left{display:flex; align-items:center; gap:12px;}
+  .avatar{
+    width:46px; height:46px; border-radius:50%; object-fit:cover; flex-shrink:0;
+    background:linear-gradient(135deg,var(--gold2),var(--gold)); display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:16px; color:#fff; box-shadow:0 8px 18px -6px rgba(245,158,11,.5);
+  }
+  .topbar-info{display:flex; flex-direction:column;}
+  .topbar-name{font-size:16px; font-weight:800;}
+  .topbar-id{font-size:12px; color:var(--muted); margin-top:1px;}
+  .timer-pill{
+    display:flex; align-items:center; gap:7px; padding:7px 16px; border-radius:100px;
+    font-size:14px; font-weight:800; border:1px solid rgba(124,58,237,.25);
+    background:rgba(124,58,237,.08); color:var(--purple); transition:all .3s var(--ease); font-variant-numeric:tabular-nums;
+  }
+  .timer-pill.warn{background:rgba(239,68,68,.1); color:var(--red); border-color:rgba(239,68,68,.3);}
+
+  .main{position:relative; z-index:2; flex:1; display:flex; align-items:center; justify-content:center; padding:26px 18px;}
+  .card{
+    width:100%; max-width:380px; background:linear-gradient(155deg,var(--card),var(--card2));
+    border:1px solid var(--border); border-radius:24px;
+    padding:32px 24px 28px; text-align:center; box-shadow:var(--shadow);
+    animation:cardIn .5s var(--ease) both;
+  }
+  @keyframes cardIn{from{opacity:0; transform:translateY(18px) scale(.98)} to{opacity:1; transform:translateY(0) scale(1)}}
+
+  h2{font-size:18px; font-weight:800; margin:0 0 4px;
+    background:linear-gradient(135deg,var(--gold),var(--purple)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  p.sub{font-size:12.5px; color:var(--muted); margin:0 0 20px;}
+
+  .expression{
+    font-size:24px; font-weight:800; color:var(--text); background:var(--bg2); border-radius:16px;
+    padding:22px 12px; margin-bottom:20px; letter-spacing:.5px; word-break:break-all;
+    border:1px solid var(--border);
+  }
+  .expression .eq{color:var(--gold);}
+
+  .options-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
+  .opt-btn{
+    padding:16px 8px; border-radius:14px; border:1.5px solid var(--border); background:#fff;
+    color:var(--text); font-size:17px; font-weight:800; cursor:pointer; transition:all .16s var(--ease);
+    box-shadow:0 4px 12px -6px rgba(15,23,42,.08);
+  }
+  .opt-btn:active{transform:scale(.94);}
+  .opt-btn.correct{background:rgba(34,197,94,.12); border-color:var(--green2); color:var(--green);}
+  .opt-btn.wrong{background:rgba(239,68,68,.1); border-color:var(--red); color:var(--red);}
+  .opt-btn.dim{opacity:.35; pointer-events:none;}
+
+  .progress-track{width:100%; height:7px; background:var(--bg2); border-radius:20px; overflow:hidden; margin-top:20px; border:1px solid var(--border);}
+  .progress-fill{height:100%; border-radius:20px; background:linear-gradient(90deg,var(--purple2),var(--gold)); transition:width 1s linear, background .3s var(--ease);}
+
+  .result-icon{
+    width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    margin:0 auto 18px; animation:popIn .5s cubic-bezier(.2,1.4,.4,1) both;
+  }
+  @keyframes popIn{ from{transform:scale(.5); opacity:0} to{transform:scale(1); opacity:1} }
+  .result-icon.ok{background:linear-gradient(135deg,var(--green2),var(--green)); box-shadow:0 14px 30px -10px rgba(34,197,94,.5);}
+  .result-icon.warn{background:linear-gradient(135deg,var(--gold2),var(--gold)); box-shadow:0 14px 30px -10px rgba(245,158,11,.5);}
+  .result-icon svg{width:38px; height:38px;}
+
+  .fallback-box{text-align:left; margin-top:8px;}
+  .fallback-channel-btn{
+    display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:14px;
+    background:linear-gradient(135deg,var(--purple2),var(--purple)); color:#fff; text-decoration:none; font-weight:700; font-size:14px;
+    margin-bottom:12px; box-shadow:0 10px 22px -8px rgba(124,58,237,.5); transition:transform .16s var(--ease);
+  }
+  .fallback-channel-btn:active{ transform:scale(.97); }
+  .unlock-btn{
+    width:100%; padding:15px; border:none; border-radius:14px; font-size:14.5px; font-weight:800;
+    background:linear-gradient(135deg,var(--green2),var(--green)); color:#fff; cursor:pointer;
+    box-shadow:0 10px 22px -8px rgba(34,197,94,.5);
+  }
+  .unlock-btn:active{transform:scale(.97);}
+  .fallback-msg{font-size:12px; margin-top:10px; text-align:center; min-height:16px; color:var(--muted);}
+  .fallback-msg.err{color:var(--red);}
+
+  .footer{position:relative; z-index:2; text-align:center; font-size:11.5px; color:#c9c4dc; padding:14px 0 20px;}
+  .footer a{color:var(--purple2); text-decoration:none; font-weight:700;}
+
+  .confetti-wrap{position:fixed; inset:0; pointer-events:none; z-index:5; overflow:hidden;}
+  .confetti{position:absolute; top:-10px; width:7px; height:7px; opacity:.9; animation:fall linear forwards; border-radius:2px;}
+  @keyframes fall{to{transform:translateY(110vh) rotate(500deg); opacity:.2;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <img class="avatar" id="avatarImg" src="" alt="" style="display:none;" />
+    <div class="avatar" id="avatarFallback">?</div>
+    <div class="topbar-info">
+      <div class="topbar-name" id="topbarName">User</div>
+      <div class="topbar-id" id="topbarId">ID: —</div>
+    </div>
+  </div>
+  <div class="timer-pill" id="timerPill">⏱ 15s</div>
+</div>
+
+<div class="main">
+  <div class="card" id="card">
+
+    <div id="captchaState">
+      <h2>🧮 Solve the Captcha</h2>
+      <p class="sub">Select the correct answer before time runs out</p>
+      <div class="expression" id="expression">Loading...</div>
+      <div class="options-grid" id="optionsGrid"></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:100%;"></div></div>
+    </div>
+
+    <div id="fallbackState" style="display:none;">
+      <div class="result-icon warn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 9v4"></path><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><path d="M12 17h.01"></path>
+        </svg>
+      </div>
+      <h2 style="color:var(--gold);">Captcha Not Passed</h2>
+      <p class="sub" id="fallbackSub">Join the channel below to continue.</p>
+      <div class="fallback-box">
+        <a class="fallback-channel-btn" id="fallbackChannelLink" href="#" target="_blank">📢 Join Channel</a>
+        <button class="unlock-btn" id="fallbackUnlockBtn">✅ I've Joined — Continue</button>
+        <div class="fallback-msg" id="fallbackMsg"></div>
+      </div>
+    </div>
+
+    <div id="successState" style="display:none;">
+      <div class="result-icon ok">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <h2 style="color:var(--green);">Verified!</h2>
+      <p class="sub">Bot me wapas jaake Mini App open karo.</p>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">© 2026 Ravi | Design by <a href="https://t.me/MAKERBOTRAVIII" target="_blank">@MAKERBOTRAVIII</a></div>
+
+<div class="confetti-wrap" id="confettiWrap"></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+tg?.expand();
+tg?.ready();
+
+const params = new URLSearchParams(window.location.search);
+const tgUser = tg?.initDataUnsafe?.user;
+const telegramId = params.get("uid") || String(tgUser?.id || "");
+const chatId = params.get("cid") || "";
+const messageId = params.get("mid") || "";
+
+let timeLeft = 15;
+let totalTime = 15;
+let timerInterval = null;
+let answered = false;
+
+function renderIdentity() {
+  const name = tgUser?.first_name || tgUser?.username || "User";
+  document.getElementById("topbarName").textContent = name;
+  document.getElementById("topbarId").textContent = `ID: ${telegramId}`;
+  if (tgUser?.photo_url) {
+    const img = document.getElementById("avatarImg");
+    img.src = tgUser.photo_url;
+    img.style.display = "block";
+    document.getElementById("avatarFallback").style.display = "none";
+  } else {
+    document.getElementById("avatarFallback").textContent = name.slice(0, 2).toUpperCase();
+  }
+}
+renderIdentity();
+
+function launchConfetti() {
+  const colors = ["#f59e0b", "#fbbf24", "#a855f7", "#22c55e"];
+  const wrap = document.getElementById("confettiWrap");
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDuration = (1.8 + Math.random() * 1.3) + "s";
+    wrap.appendChild(c);
+    setTimeout(() => c.remove(), 3400);
+  }
+}
+
+function startTimer() {
+  const pill = document.getElementById("timerPill");
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    pill.textContent = `⏱ ${timeLeft}s`;
+    document.getElementById("progressFill").style.width = `${(timeLeft / totalTime) * 100}%`;
+    if (timeLeft <= 5) pill.classList.add("warn");
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      if (!answered) handleTimeout();
+    }
+  }, 1000);
+}
+
+async function loadCaptcha() {
+  const res = await fetch("/api/captcha/generate", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ telegramId }),
+  });
+  const data = await res.json();
+
+  if (data.alreadyVerified) {
+    showSuccess();
+    return;
+  }
+
+  totalTime = data.timeSeconds;
+  timeLeft = totalTime;
+  document.getElementById("timerPill").textContent = `⏱ ${timeLeft}s`;
+
+  document.getElementById("expression").innerHTML = data.expression.replace(/([+-])/g, '<span class="eq">$1</span>');
+  const grid = document.getElementById("optionsGrid");
+  grid.innerHTML = data.options.map(opt => `<button class="opt-btn" data-val="${opt}">${opt}</button>`).join("");
+  grid.querySelectorAll(".opt-btn").forEach(btn => btn.addEventListener("click", () => submitAnswer(Number(btn.dataset.val), btn)));
+
+  startTimer();
+}
+
+async function submitAnswer(value, btnEl) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+
+  document.querySelectorAll(".opt-btn").forEach(b => b.classList.add("dim"));
+
+  const res = await fetch("/api/captcha/submit", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ telegramId, selectedAnswer: value, chatId, messageId }),
+  });
+  const data = await res.json();
+
+  if (data.passed) {
+    btnEl.classList.remove("dim");
+    btnEl.classList.add("correct");
+    setTimeout(showSuccess, 500);
+  } else {
+    btnEl.classList.remove("dim");
+    btnEl.classList.add("wrong");
+    setTimeout(() => showFallback(data.fallbackChannel, "Galat jawab! "), 700);
+  }
+}
+
+async function handleTimeout() {
+  if (answered) return;
+  answered = true;
+  document.querySelectorAll(".opt-btn").forEach(b => b.classList.add("dim"));
+
+  const res = await fetch("/api/captcha/submit", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ telegramId, selectedAnswer: -999999, chatId, messageId }),
+  });
+  const data = await res.json();
+  showFallback(data.fallbackChannel, "Time khatam ho gaya! ");
+}
+
+function showFallback(channel, prefix) {
+  document.getElementById("captchaState").style.display = "none";
+  document.getElementById("fallbackState").style.display = "block";
+
+  if (!channel || !channel.chatId) {
+    document.getElementById("fallbackSub").textContent = prefix + "Contact admin — fallback channel abhi set nahi hai.";
+    document.getElementById("fallbackChannelLink").style.display = "none";
+    document.getElementById("fallbackUnlockBtn").style.display = "none";
+    return;
+  }
+
+  document.getElementById("fallbackSub").textContent = prefix + "Ye channel join karo, phir continue karo.";
+  const link = document.getElementById("fallbackChannelLink");
+  link.href = channel.url;
+  link.textContent = `📢 Join ${channel.name}`;
+}
+
+document.getElementById("fallbackUnlockBtn").addEventListener("click", async () => {
+  const msgEl = document.getElementById("fallbackMsg");
+  msgEl.textContent = "Checking..."; msgEl.className = "fallback-msg";
+
+  const res = await fetch("/api/captcha/fallback-check", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ telegramId, chatId, messageId }),
+  });
+  const data = await res.json();
+
+  if (data.joined) {
+    showSuccess();
+  } else {
+    msgEl.textContent = "❌ Abhi bhi join nahi kiya — pehle channel join karo.";
+    msgEl.classList.add("err");
+  }
+});
+
+function showSuccess() {
+  document.getElementById("captchaState").style.display = "none";
+  document.getElementById("fallbackState").style.display = "none";
+  document.getElementById("successState").style.display = "block";
+  document.getElementById("timerPill").textContent = "✅ Verified";
+  document.getElementById("timerPill").className = "timer-pill";
+  launchConfetti();
+  setTimeout(() => tg?.close?.(), 2000);
+}
+
+loadCaptcha();
+</script>
+</body>
+</html>
