@@ -9,7 +9,7 @@ const TelegramBot = require("node-telegram-bot-api");
 // ==================================================
 const BOT_TOKEN = "8833680848:AAFsKWMuPk0YZPv_rg3d_2VJAzMnklUG6-Y";
 const BOT_USERNAME = "CashRichesBot";
-const MONGO_URI = "mongodb+srv://sk3134909_db_user:ravi12345678901234567890@cluster0.cj72z6x.mongodb.net/?appName=Cluster0"; // ⚠️ TUM APNA NAYA MONGO URI YAHAN DAALO — abhi purana wala hai
+const MONGO_URI = "mongodb+srv://onlydatabase14_db_user:fOTYbj5lwDoUEHcu@cluster0.8jzothz.mongodb.net/?appName=Cluster0"; // ⚠️ TUM APNA NAYA MONGO URI YAHAN DAALO — abhi purana wala hai
 const ADMIN_PASSWORD = "DevloperRavi"; // Main Admin Panel ka password — chaho to badal do
 const DEV_VERIFY_PASSWORD = "DevRaviPanel"; // Device Verification Panel ka ALAG password — chaho to badal do
 const RAVIPANEL_PASSWORD = ADMIN_PASSWORD; // /ravipanel bot command isi Admin Password se open hoga
