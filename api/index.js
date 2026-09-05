@@ -7,7 +7,7 @@ const TelegramBot = require("node-telegram-bot-api");
 // ==================================================
 // CONFIG — hardcoded
 // ==================================================
-const BOT_TOKEN = "8833680848:AAFmBnuT8AB7YokAQsjSI7frui7U0TUYrpk;
+const BOT_TOKEN = "8833680848:AAFmBnuT8AB7YokAQsjSI7frui7U0TUYrpk";
 const BOT_USERNAME = "CashRichesBot";
 const MONGO_URI = "mongodb+srv://onlydatabase14_db_user:fOTYbj5lwDoUEHcu@cluster0.8jzothz.mongodb.net/?appName=Cluster0"; // ⚠️ TUM APNA NAYA MONGO URI YAHAN DAALO — abhi purana wala hai
 const ADMIN_PASSWORD = "DevloperRavi"; // Main Admin Panel ka password — chaho to badal do
